@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     'https://track-mill-republic.lovable.app',
     'https://d4afd83a-1a7d-4171-ab7a-f2684f653e05.lovableproject.com'
   ];
-  const origin = req.headers.get('origin');
+  const origin = req.headers?.origin || req.headers?.Origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
