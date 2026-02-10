@@ -1,5 +1,13 @@
+javascript
 export default async function handler(request, response) {
-  response.setHeader('Access-Control-Allow-Origin', 'https://track-mill-republic.lovable.app');
+  const allowedOrigins = [
+    'https://track-mill-republic.lovable.app',
+    'https://d4afd83a-1a7d-4171-ab7a-f2684f653e05.lovableproject.com'
+  ];
+  const origin = request.headers.get('origin');
+  if (allowedOrigins.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+  }
   response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
   const APP_ID = process.env.FEISHU_APP_ID;
