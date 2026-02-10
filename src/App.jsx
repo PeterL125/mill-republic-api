@@ -1,5 +1,4 @@
 import { useState } from "react";
-// 注意：这里不再导入图片，而是直接使用路径
 import TrackingInput from "./components/TrackingInput";
 import TrackingResult from "./components/TrackingResult";
 
@@ -11,51 +10,122 @@ const App = () => {
   const formatTimestamp = (ts) => {
     const d = new Date(ts);
     return {
-      date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      date: d.toLocaleDateString("zh-CN", { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      }),
+      time: d.toLocaleTimeString("zh-CN", { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      }),
     };
   };
 
   const convertToTrackingData = (item, inputId) => {
     const fields = item.fields;
 
+    // 提取追踪ID - 从数组中的text字段获取
     const trackingId = fields["Track ID"]?.[0]?.text || inputId;
-    const origin = fields["Farm Location"]?.[0]?.text || "Origin N/A";
-    const destination = fields["Warehouse Location"]?.name || "Destination N/A";
+    
+    // 提取批次号
+    const batchId = fields["Batch ID"] || "未指定";
+    
+    // 提取农场位置 - 从数组中获取text
+    const origin = fields["Farm Location"]?.[0]?.text || "农场位置信息缺失";
+    
+    // 提取仓库位置 - 这是一个对象，取name字段
+    const destination = fields["Warehouse Location"]?.name || "仓库位置信息缺失";
 
+    // 提取送达时间并格式化
     const deliveryTs = fields["Delivery Date"];
     const estimatedDelivery = deliveryTs
-      ? new Date(deliveryTs).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-      : "TBD";
+      ? new Date(deliveryTs).toLocaleDateString("zh-CN", { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      : "待定";
 
+    // 构建物流事件时间线（基于可用的时间戳字段）
     const eventDefs = [
-      { key: "Pickup From Farm On", location: origin, description: "Picked up from farm" },
-      { key: "Process Date at MR Hub", location: "MR Hub", description: "Processing at MR Hub" },
-      { key: "Pickup Date at MR Hub", location: "MR Hub", description: "Dispatched from MR Hub" },
-      { key: "Delivery Date", location: destination, description: "Delivered" },
+      { 
+        key: "Pickup From Farm On", 
+        location: origin, 
+        description: "从农场取货" 
+      },
+      { 
+        key: "Process Date at MR Hub", 
+        location: "MR处理中心", 
+        description: "在MR中心处理" 
+      },
+      { 
+        key: "Pickup Date at MR Hub", 
+        location: "MR处理中心", 
+        description: "从MR中心发出" 
+      },
+      { 
+        key: "Arrival at Warehouse", 
+        location: destination, 
+        description: "抵达仓库" 
+      },
+      { 
+        key: "Delivery Date", 
+        location: destination, 
+        description: "已送达" 
+      },
     ];
 
+    // 筛选出有时间的物流事件并格式化
     const events = eventDefs
       .filter((def) => fields[def.key])
       .map((def) => {
-        const { date, time } = formatTimestamp(fields[def.key]);
-        return { date, time, location: def.location, description: def.description };
+        const timestamp = fields[def.key];
+        const { date, time } = formatTimestamp(timestamp);
+        return { 
+          date, 
+          time, 
+          location: def.location, 
+          description: def.description 
+        };
       })
-      .reverse();
+      .reverse(); // 最新的事件在前
 
+    // 判断当前物流状态
     let status = "in_transit";
-    let statusText = "In Transit";
+    let statusText = "运输中";
+    
     if (fields["Delivery Date"] && new Date(fields["Delivery Date"]) <= new Date()) {
       status = "delivered";
-      statusText = "Delivered";
-    } else if (!fields["Pickup From Farm On"]) {
+      statusText = "已送达";
+    } else if (fields["Arrival at Warehouse"]) {
+      status = "arrived";
+      statusText = "已抵达仓库";
+    } else if (fields["Pickup From Farm On"]) {
+      status = "picked_up";
+      statusText = "已取货";
+    } else {
       status = "pending";
-      statusText = "Pending";
+      statusText = "待处理";
     }
 
-    const lastUpdate = events.length > 0 ? `${events[0].date} ${events[0].time}` : "N/A";
+    // 最后更新时间
+    const lastUpdate = events.length > 0 
+      ? `${events[0].date} ${events[0].time}`
+      : "暂无更新";
 
-    return { trackingId, status, statusText, origin, destination, estimatedDelivery, lastUpdate, events };
+    return { 
+      trackingId, 
+      batchId,
+      status, 
+      statusText, 
+      origin, 
+      destination, 
+      estimatedDelivery, 
+      lastUpdate, 
+      events 
+    };
   };
 
   const handleSearch = async (trackingId) => {
@@ -65,21 +135,29 @@ const App = () => {
 
     try {
       const res = await fetch("https://mill-republic-api.vercel.app/api/fetchTable");
-      if (!res.ok) throw new Error("API request failed");
+      if (!res.ok) throw new Error("API请求失败");
 
-      const records = await res.json();
+      const result = await res.json();
+      
+      // 调整数据结构：你的数据在 result.data.items 中
+      if (!result.success || !result.data?.items) {
+        throw new Error("API返回的数据结构无效");
+      }
+
+      const records = result.data.items;
       const matched = records.find(
         (item) => item.fields?.["Track ID"]?.[0]?.text === trackingId
       );
 
       if (!matched) {
-        setError("No matching record found. Please check your tracking ID and try again.");
+        setError("未找到匹配的记录。请检查追踪单号后重试。");
         return;
       }
 
       setTrackingData(convertToTrackingData(matched, trackingId));
     } catch (err) {
-      setError("Unable to fetch tracking information. Please try again later.");
+      setError("无法获取追踪信息，请稍后再试。");
+      console.error("查询错误:", err);
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +165,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 relative">
-      {/* 关键修改：直接使用 /logo.png 路径，不通过导入 */}
+      {/* Logo图片 - 直接使用public目录路径 */}
       <img src="/logo.png" alt="Mill Republic" className="absolute top-10 left-6 h-[5rem]" />
       <TrackingInput onSearch={handleSearch} isLoading={isLoading} />
 
