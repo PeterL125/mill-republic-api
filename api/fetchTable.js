@@ -1,14 +1,14 @@
-export default async function handler(request, response) {
+export default async function handler(req, res) {
   // 允许你的正式域名和预览域名访问
   const allowedOrigins = [
     'https://track-mill-republic.lovable.app',
     'https://d4afd83a-1a7d-4171-ab7a-f2684f653e05.lovableproject.com'
   ];
-  const origin = request.headers.get('origin');
+  const origin = req.headers.get('origin');
   if (allowedOrigins.includes(origin)) {
-    response.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
   const APP_ID = process.env.FEISHU_APP_ID;
   const APP_SECRET = process.env.FEISHU_APP_SECRET;
@@ -37,14 +37,14 @@ export default async function handler(request, response) {
     const recordsData = await recordsRes.json();
     if (recordsData.code !== 0) throw new Error(`获取数据失败: ${JSON.stringify(recordsData)}`);
 
-    response.status(200).json({
+    res.status(200).json({
       success: true,
       data: recordsData.data
     });
 
   } catch (error) {
     console.error('API Error:', error);
-    response.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || '服务器内部错误'
     });
