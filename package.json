@@ -1,5 +1,8 @@
 {
   "name": "mill-republic-api",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  }
 }
