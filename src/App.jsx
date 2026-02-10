@@ -1,11 +1,8 @@
 import { useState } from "react";
-// 注意1: 图片路径已改为从public目录引用
-import logo from "/logo.png";
-// 注意2: 组件路径已改为相对路径
+// 注意：这里不再导入图片，而是直接使用路径
 import TrackingInput from "./components/TrackingInput";
 import TrackingResult from "./components/TrackingResult";
 
-// 注意3: 移除了TypeScript类型定义，确保纯JavaScript兼容性
 const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [trackingData, setTrackingData] = useState(null);
@@ -67,7 +64,6 @@ const App = () => {
     setTrackingData(null);
 
     try {
-      // 注意4: API地址保持不变，指向你自己的后端
       const res = await fetch("https://mill-republic-api.vercel.app/api/fetchTable");
       if (!res.ok) throw new Error("API request failed");
 
@@ -90,9 +86,9 @@ const App = () => {
   };
 
   return (
-    // 注意5: 暂时移除了Tailwind特有类名 `bg-background`，先用标准颜色
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 relative">
-      <img src={logo} alt="Mill Republic" className="absolute top-10 left-6 h-[5rem]" />
+      {/* 关键修改：直接使用 /logo.png 路径，不通过导入 */}
+      <img src="/logo.png" alt="Mill Republic" className="absolute top-10 left-6 h-[5rem]" />
       <TrackingInput onSearch={handleSearch} isLoading={isLoading} />
 
       <div className="w-full max-w-2xl mt-8">
@@ -102,5 +98,4 @@ const App = () => {
   );
 };
 
-// 注意6: 确保默认导出
 export default App;
