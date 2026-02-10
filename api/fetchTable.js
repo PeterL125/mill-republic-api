@@ -1,3 +1,5 @@
+javascript
+
 export default async function handler(request, response) {
   // 允许你的正式域名和预览域名访问
   const allowedOrigins = [
@@ -12,7 +14,7 @@ export default async function handler(request, response) {
 
   const APP_ID = process.env.FEISHU_APP_ID;
   const APP_SECRET = process.env.FEISHU_APP_SECRET;
-  const APP_TOKEN = 'HjAdbGuycaoKvBswXuvjdcdPpcf'; // 注意这里是 'Ppcf'，你截图中是 'PPcf'，可能错了
+  const APP_TOKEN = 'HjAdbGuycaoKvBswXuvjdcdPpcf';
   const TABLE_ID = 'tblUcLcfmpy7B7IP';
 
   try {
