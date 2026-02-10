@@ -1,13 +1,18 @@
 export default async function handler(req, res) {
-  // 允许你的正式域名和预览域名访问
-  const allowedOrigins = [
-    'https://track-mill-republic.lovable.app',
-    'https://d4afd83a-1a7d-4171-ab7a-f2684f653e05.lovableproject.com'
-  ];
+  // 方案一：允许所有域名访问（最简单，适合测试阶段）
+  const allowedOrigins = '*';
   const origin = req.headers?.origin || req.headers?.Origin;
-  if (allowedOrigins.includes(origin)) {
+
+  // 统一的CORS设置逻辑
+  if (allowedOrigins === '*') {
+    // 如果是通配符，直接允许所有
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+    // 如果是数组，且来源在列表中，则允许该特定来源
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
+  // 如果来源不在列表中，则不设置CORS头，浏览器会阻止请求
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
   const APP_ID = process.env.FEISHU_APP_ID;
