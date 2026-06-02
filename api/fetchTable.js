@@ -17,8 +17,9 @@ export default async function handler(req, res) {
 
   const APP_ID = process.env.FEISHU_APP_ID;
   const APP_SECRET = process.env.FEISHU_APP_SECRET;
-  const APP_TOKEN = 'HjAdbGuycaoKvBswXuvjdcdPpcf';
-  const TABLE_ID = 'tblUcLcfmpy7B7IP';
+  // 已更新为新 Base 的 APP_TOKEN 和 TABLE_ID
+  const APP_TOKEN = 'MYdubIoIZafJ4nsV1wxjB0AAplc';
+  const TABLE_ID = 'tblr8Jya9ugrXiKt';
 
   try {
     const tokenRes = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
