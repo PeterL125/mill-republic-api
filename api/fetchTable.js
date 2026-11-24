@@ -31,21 +31,34 @@ export default async function handler(req, res) {
     if (tokenData.code !== 0) throw new Error(`获取Token失败: ${JSON.stringify(tokenData)}`);
     const accessToken = tokenData.tenant_access_token;
 
-    const recordsRes = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records?page_size=100`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+    // 分页读取全部记录：飞书/Lark 接口每页最多 500 条，超过时返回 has_more + page_token。
+    // 之前只请求了一页（page_size=100），第 101 条以后的记录永远不会返回给前端。
+    const items = [];
+    let pageToken = '';
+    let pages = 0;
+    do {
+      const params = new URLSearchParams({ page_size: '500' });
+      if (pageToken) params.set('page_token', pageToken);
+      const recordsRes = await fetch(
+        `https://open.feishu.cn/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
-    const recordsData = await recordsRes.json();
-    if (recordsData.code !== 0) throw new Error(`获取数据失败: ${JSON.stringify(recordsData)}`);
+      );
+      const recordsData = await recordsRes.json();
+      if (recordsData.code !== 0) throw new Error(`获取数据失败: ${JSON.stringify(recordsData)}`);
+      items.push(...(recordsData.data?.items || []));
+      pageToken = recordsData.data?.has_more ? recordsData.data.page_token : '';
+      pages += 1;
+    } while (pageToken && pages < 50); // 安全上限：最多 50 页（25,000 条）
 
+    // 保持原来的返回结构（data.items），前端不用改
     res.status(200).json({
       success: true,
-      data: recordsData.data
+      data: { items, total: items.length, has_more: false }
     });
 
   } catch (error) {
